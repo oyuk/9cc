@@ -1,8 +1,40 @@
 #include "9cc.h"
 
+void load() {
+    printf("    pop rax\n");
+    printf("    mov rax, [rax]\n");
+    printf("    push rax\n");
+}
+
+void store() {
+    printf("    pop rdi\n");
+    printf("    pop rax\n");
+    printf("    move [rax], rdi\n");
+    printf("    push rdi\n");
+}
+
+void gen_lval(Node *node) {
+  if (node->kind != ND_LVAR)
+    error("代入の左辺血が変数ではありません");
+
+  printf("    mov rax, rbp\n");
+  printf("    sub rax, %d\n", node->offset);
+  printf("    push rax\n");
+}
+
 void gen(Node *node) {
-  if (node->kind == ND_NUM) {
+  switch (node->kind) {
+  case ND_NUM:
     printf("  push %d\n", node->val);
+    return;
+  case ND_LVAR:
+    gen_lval(node);
+    load();
+    return;
+  case ND_ASSIGN:
+    gen_lval(node->lhs);
+    gen(node->rhs);
+    store();
     return;
   }
 
@@ -12,7 +44,7 @@ void gen(Node *node) {
   printf("  pop rdi\n");
   printf("  pop rax\n");
 
-  switch (node->kind) {
+  switch(node->kind) {
   case ND_ADD:
     printf("  add rax, rdi\n");
     break;
@@ -21,46 +53,32 @@ void gen(Node *node) {
     break;
   case ND_MUL:
     printf("  imul rax, rdi\n");
-    break;
+    break;    
   case ND_DIV:
     printf("  cqo\n");
     printf("  idiv rdi\n");
-    break;
+    break;    
   case ND_EQ:
     printf("  cmp rax, rdi\n");
     printf("  sete al\n");
     printf("  movzb rax, al\n");
-    break;
+    break;    
   case ND_NE:
     printf("  cmp rax, rdi\n");
     printf("  setne al\n");
     printf("  movzb rax, al\n");
-    break;
+    break;    
   case ND_LT:
     printf("  cmp rax, rdi\n");
     printf("  setl al\n");
     printf("  movzb rax, al\n");
-    break;
+    break;        
   case ND_LE:
     printf("  cmp rax, rdi\n");
     printf("  setle al\n");
     printf("  movzb rax, al\n");
-
-    break;
+    break;        
   }
 
   printf("  push rax\n");
-}
-
-void codegen(Node *node) {
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-
-  gen(node);
-
-  // A result must be at the top of the stack, so pop it
-  // to RAX to make it a program exit code.
-  printf("  pop rax\n");
-  printf("  ret\n");
 }

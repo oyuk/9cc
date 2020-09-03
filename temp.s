@@ -1,8 +1,11 @@
 .intel_syntax noprefix
 .global main
-    
 main:
-    mov rax, 5
-    add rax, 20
-    sub rax, 4
-    ret
+  push rbp
+  mov rbp, rsp
+  sub rsp, 208
+  push 0
+  pop rax
+  mov rsp, rbp
+  pop rax
+  ret
