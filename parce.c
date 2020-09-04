@@ -1,6 +1,5 @@
 #include "9cc.h"
 
-
 Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -46,7 +45,14 @@ void program() {
 }
 
 Node *stmt() {
-  Node *node = expr();
+  Node *node;
+  if (expect_return()) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_RETURN;
+    node->lhs = expr();
+  } else {
+    node = expr();
+  }
   expect(";");
   return node;
 }
@@ -127,6 +133,20 @@ Node *mul() {
   }
 }
 
+char *strndup(const char *s, size_t n) {
+    char *p;
+    size_t n1;
+
+    for (n1 = 0; n1 < n && s[n1] != '\0'; n1++)
+        continue;
+    p = malloc(n + 1);
+    if (p != NULL) {
+        memcpy(p, s, n1);
+        p[n1] = '\0';
+    }
+    return p;
+}
+
 Node *primary() {
   if (consume("(")) {
     Node *node = expr();
@@ -143,9 +163,12 @@ Node *primary() {
     } else {
       lvar = calloc(1, sizeof(LVar));
       lvar->next = locals;
-      lvar->name = tok->str;
+      lvar->name = strndup(tok->str, tok->len);
       lvar->len = tok->len;
-      lvar->offset = locals->offset + 8;
+      lvar->offset = 8;
+      if (locals) {
+        lvar->offset += locals->offset;
+      }
       node->offset = lvar->offset;
       locals = lvar;
     }

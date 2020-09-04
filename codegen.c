@@ -9,7 +9,7 @@ void load() {
 void store() {
     printf("    pop rdi\n");
     printf("    pop rax\n");
-    printf("    move [rax], rdi\n");
+    printf("    mov [rax], rdi\n");
     printf("    push rdi\n");
 }
 
@@ -35,6 +35,13 @@ void gen(Node *node) {
     gen_lval(node->lhs);
     gen(node->rhs);
     store();
+    return;
+  case ND_RETURN:
+    gen(node->lhs);
+    printf("  pop rax\n");
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
     return;
   }
 

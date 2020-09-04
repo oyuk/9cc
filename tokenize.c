@@ -60,6 +60,15 @@ int expect_number() {
   return val;
 }
 
+Token *expect_return() {
+  if (token->kind != TK_RETURN) {
+    return NULL;
+  }
+  Token *tk = token;
+  token = token->next;
+  return tk;
+}
+
 bool at_eof() {
   return token->kind == TK_EOF;
 }
@@ -76,6 +85,13 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 
 bool startswith(char *p, char *q) {
   return memcmp(p, q, strlen(q)) == 0;
+}
+
+bool is_alnum(char c) {
+  return ('a' <= c && c <= 'z') ||
+         ('A' <= c && c <= 'Z') ||
+         ('0' <= c && c <= '9') ||
+         (c == '_');
 }
 
 LVar *find_lvar(Token *tok) {
@@ -97,6 +113,12 @@ Token *tokenize() {
       continue;
     }
 
+    if (startswith(p, "return") && !is_alnum(p[6])) {
+      cur = new_token(TK_RETURN, cur, p, 6);
+      p += 6;
+      continue;
+    }
+
     if (startswith(p, "==") || startswith(p, "!=") ||
         startswith(p, "<=") || startswith(p, ">=")) {
       cur = new_token(TK_RESERVED, cur, p, 2);
@@ -104,8 +126,13 @@ Token *tokenize() {
       continue;
     }
 
-    if (strchr("+-*/()<>;", *p)) {
+    if (ispunct(*p)) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
       continue;
     }
 
@@ -114,11 +141,6 @@ Token *tokenize() {
       char *q = p;
       cur->val = strtol(p, &p, 10);
       cur->len = p - q;
-      continue;
-    }
-
-    if ('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p++, 1);
       continue;
     }
 
